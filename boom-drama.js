@@ -120,6 +120,20 @@ function extractGofileLink() {
     return match ? match[0] : null;
 }
 
+// Extract Streamtape Link from Post Content and Generate Thumbnail
+function extractStreamtapeLinkAndThumbnail() {
+    const postContent = document.querySelector('.post-body')?.innerHTML || '';
+    const streamtapeRegex = /https:\/\/streamtape\.com\/e\/[a-zA-Z0-9]+/g;
+    const match = postContent.match(streamtapeRegex);
+    if (match) {
+        const streamtapeLink = match[0];
+        const videoId = streamtapeLink.split('/e/')[1];
+        const thumbnailUrl = `https://streamtape.com/thumbs/${videoId}.jpg`;
+        return { streamtapeLink, thumbnailUrl };
+    }
+    return { streamtapeLink: null, thumbnailUrl: null };
+}
+
 // Initialize Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
     const watchAdBtn = document.querySelector('.watch-ad-btn');
@@ -188,6 +202,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 const url = this.getAttribute('href');
                 handleAdRedirect(url, 'episode');
             });
+        });
+    }
+
+    // Set Streamtape Thumbnail on Homepage
+    if (document.querySelector('.drama-grid')) {
+        const dramaCards = document.querySelectorAll('.drama-card');
+        dramaCards.forEach(card => {
+            const postUrl = card.querySelector('a').getAttribute('href');
+            // Fetch post content dynamically (simplified approach)
+            fetch(postUrl)
+                .then(response => response.text())
+                .then(data => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(data, 'text/html');
+                    const postContent = doc.querySelector('.post-body')?.innerHTML || '';
+                    const streamtapeRegex = /https:\/\/streamtape\.com\/e\/[a-zA-Z0-9]+/g;
+                    const match = postContent.match(streamtapeRegex);
+                    if (match) {
+                        const streamtapeLink = match[0];
+                        const videoId = streamtapeLink.split('/e/')[1];
+                        const thumbnailUrl = `https://streamtape.com/thumbs/${videoId}.jpg`;
+                        const img = card.querySelector('img');
+                        if (img) {
+                            img.src = thumbnailUrl;
+                        }
+                    }
+                })
+                .catch(err => console.log('Error fetching post for thumbnail:', err));
         });
     }
 });
