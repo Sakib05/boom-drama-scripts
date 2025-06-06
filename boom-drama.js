@@ -19,9 +19,9 @@ function scrollToTop() {
 
 // Multiple Ad Links for Video Ad
 const adLinks = [
-    'https://example.com/ad1',
-    'https://example.com/ad2',
-    'https://example.com/ad3',
+    'https://trickbd.com',
+    'https://alibaba.com.com',
+    'https://google.com',
     'https://example.com/ad4'
 ];
 
@@ -49,47 +49,65 @@ function getRandomAdLink() {
     return selectedAd.link;
 }
 
+// Function to show countdown overlay
+function showCountdownOverlay(url, type) {
+    const overlay = document.createElement('div');
+    overlay.id = 'adCountdownOverlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    overlay.style.zIndex = '10000';
+    overlay.style.display = 'flex';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    overlay.style.color = '#fff';
+    overlay.style.fontSize = '24px';
+    overlay.style.fontFamily = 'Arial, sans-serif';
+
+    const countdownText = document.createElement('div');
+    countdownText.id = 'countdownText';
+    countdownText.textContent = '5';
+    overlay.appendChild(countdownText);
+
+    document.body.appendChild(overlay);
+
+    let timeLeft = 5;
+    const countdown = setInterval(() => {
+        timeLeft--;
+        countdownText.textContent = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(countdown);
+            document.body.removeChild(overlay);
+            sessionStorage.setItem('adWatched', 'true');
+            const returnUrl = sessionStorage.getItem('returnUrl');
+            const redirectAfterAd = sessionStorage.getItem('redirectAfterAd');
+            const adType = sessionStorage.getItem('adType');
+            if (adType === 'video' && returnUrl) {
+                window.location.href = returnUrl;
+            } else if ((adType === 'download' || adType === 'episode') && redirectAfterAd) {
+                window.location.href = redirectAfterAd;
+            }
+        }
+    }, 1000);
+
+    // Prevent back navigation during countdown
+    window.history.pushState(null, null, window.location.href);
+    window.addEventListener('popstate', function() {
+        window.history.pushState(null, null, window.location.href);
+    });
+}
+
 // Redirect Ad Logic for Video Ad, Download, and Episode Switch
 function handleAdRedirect(url, type) {
     sessionStorage.setItem('returnUrl', window.location.href);
     sessionStorage.setItem('redirectAfterAd', url);
     sessionStorage.setItem('adType', type); // 'video', 'download', or 'episode'
     sessionStorage.setItem('adStartTime', Date.now().toString());
-    const adUrl = getRandomAdLink();
-    window.location.href = adUrl;
+    showCountdownOverlay(url, type);
 }
-
-// Ad Page Countdown Logic (Simulated in the script for the ad page)
-window.addEventListener('load', function() {
-    const adStartTime = sessionStorage.getItem('adStartTime');
-    if (adStartTime && adLinks.some(link => window.location.href.includes(new URL(link).hostname))) {
-        let timeLeft = 5;
-        const countdown = setInterval(() => {
-            timeLeft--;
-            if (timeLeft <= 0) {
-                clearInterval(countdown);
-                const elapsedTime = (Date.now() - parseInt(adStartTime)) / 1000;
-                if (elapsedTime >= 5) {
-                    sessionStorage.setItem('adWatched', 'true');
-                    const returnUrl = sessionStorage.getItem('returnUrl');
-                    const adType = sessionStorage.getItem('adType');
-                    const redirectAfterAd = sessionStorage.getItem('redirectAfterAd');
-                    if (adType === 'video' && returnUrl) {
-                        window.location.href = returnUrl;
-                    } else if ((adType === 'download' || adType === 'episode') && redirectAfterAd) {
-                        window.location.href = redirectAfterAd;
-                    }
-                }
-            }
-        }, 1000);
-
-        // Prevent back navigation from skipping the ad
-        window.history.pushState(null, null, window.location.href);
-        window.addEventListener('popstate', function() {
-            window.history.pushState(null, null, window.location.href);
-        });
-    }
-});
 
 // Share Popup Toggle
 function toggleSharePopup() {
