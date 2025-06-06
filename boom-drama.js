@@ -1,16 +1,17 @@
 // Debug to confirm script is loading
 console.log('Script loaded successfully at ' + new Date().toLocaleString());
 
-// Multiple Ad Links for Video Ad
+// Multiple Ad Links
 const adLinks = [
-    'https://example.com/ad1',
-    'https://example.com/ad2',
-    'https://example.com/ad3',
+    'https://google.com',
+    'https://alibaba.com',
+    'https://trickbd.com',
     'https://example.com/ad4'
 ];
 
-// Function to get a random ad link that hasn't been used in the last 24 hours
+// Function to get a random ad link
 function getRandomAdLink() {
+    console.log('Getting random ad link...');
     const now = Date.now();
     const oneDayInMs = 24 * 60 * 60 * 1000;
     let availableAds = [];
@@ -30,21 +31,22 @@ function getRandomAdLink() {
     const randomIndex = Math.floor(Math.random() * availableAds.length);
     const selectedAd = availableAds[randomIndex];
     localStorage.setItem(`adUsed_${selectedAd.index}`, now.toString());
+    console.log('Selected ad:', selectedAd.link);
     return selectedAd.link;
 }
 
-// Redirect Ad Logic for Video Ad and Download
+// Redirect Ad Logic
 function handleAdRedirect(url, type) {
     console.log('Handling ad redirect for:', url, 'Type:', type);
-    sessionStorage.setItem('returnUrl', window.location.href);
-    sessionStorage.setItem('redirectAfterAd', url);
-    sessionStorage.setItem('adType', type);
-    sessionStorage.setItem('adStartTime', Date.now().toString());
-    console.log('Stored in sessionStorage:', {
-        returnUrl: sessionStorage.getItem('returnUrl'),
-        redirectAfterAd: sessionStorage.getItem('redirectAfterAd'),
-        adType: sessionStorage.getItem('adType'),
-        adStartTime: sessionStorage.getItem('adStartTime')
+    localStorage.setItem('returnUrl', window.location.href);
+    localStorage.setItem('redirectAfterAd', url);
+    localStorage.setItem('adType', type);
+    localStorage.setItem('adStartTime', Date.now().toString());
+    console.log('Stored in localStorage:', {
+        returnUrl: localStorage.getItem('returnUrl'),
+        redirectAfterAd: localStorage.getItem('redirectAfterAd'),
+        adType: localStorage.getItem('adType'),
+        adStartTime: localStorage.getItem('adStartTime')
     });
     const adUrl = getRandomAdLink();
     console.log('Redirecting to ad:', adUrl);
@@ -53,7 +55,7 @@ function handleAdRedirect(url, type) {
 
 // Ad Page Countdown Logic
 window.addEventListener('load', function() {
-    const adStartTime = sessionStorage.getItem('adStartTime');
+    const adStartTime = localStorage.getItem('adStartTime');
     if (adStartTime && adLinks.some(link => {
         try {
             return window.location.href.includes(new URL(link).hostname);
@@ -72,9 +74,9 @@ window.addEventListener('load', function() {
                 const elapsedTime = (Date.now() - parseInt(adStartTime)) / 1000;
                 console.log('Elapsed time:', elapsedTime, 'seconds');
                 if (elapsedTime >= 5) {
-                    sessionStorage.setItem('adWatched', 'true');
+                    localStorage.setItem('adWatched', 'true');
                     console.log('Ad watched, redirecting back...');
-                    const returnUrl = sessionStorage.getItem('returnUrl');
+                    const returnUrl = localStorage.getItem('returnUrl');
                     if (returnUrl) {
                         console.log('Returning to:', returnUrl);
                         window.location.href = returnUrl;
@@ -96,65 +98,73 @@ window.addEventListener('load', function() {
 
 // Initialize Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
-    const watchAdBtn = document.querySelector('.watch-ad-btn');
-    const downloadBtn = document.querySelector('.download-btn');
-    const adNotice = document.querySelector('.ad-notice');
+    console.log('DOM fully loaded, initializing event listeners...');
+    setTimeout(() => {
+        const watchAdBtn = document.querySelector('.watch-ad-btn');
+        const downloadBtn = document.querySelector('.download-btn');
+        const adNotice = document.querySelector('.ad-notice');
 
-    const episodeDownloadLinkElement = document.querySelector('.episode-download-link');
-    const episodeDownloadLink = episodeDownloadLinkElement ? episodeDownloadLinkElement.getAttribute('href') : null;
-    if (!episodeDownloadLink) {
-        console.error('No episode download link found in the post');
-        return;
-    }
-    console.log('Episode Download Link:', episodeDownloadLink);
-
-    console.log('Initial sessionStorage check:', {
-        adWatched: sessionStorage.getItem('adWatched'),
-        returnUrl: sessionStorage.getItem('returnUrl'),
-        redirectAfterAd: sessionStorage.getItem('redirectAfterAd'),
-        adType: sessionStorage.getItem('adType')
-    });
-
-    const adWatched = sessionStorage.getItem('adWatched');
-    const returnUrl = sessionStorage.getItem('returnUrl');
-    const adType = sessionStorage.getItem('adType');
-
-    if (adWatched === 'true' && returnUrl && window.location.href === returnUrl) {
-        console.log('Ad watched, processing redirect...');
-        if (adType === 'video' && adNotice) {
-            adNotice.style.display = 'none';
-        } else if (adType === 'download') {
-            const redirectUrl = sessionStorage.getItem('redirectAfterAd');
-            console.log('Redirecting to:', redirectUrl);
-            if (redirectUrl) {
-                window.location.href = redirectUrl;
-            } else {
-                console.error('No redirect URL found in sessionStorage, using fallback:', episodeDownloadLink);
-                window.location.href = episodeDownloadLink;
-            }
+        const episodeDownloadLinkElement = document.querySelector('.episode-download-link');
+        if (!episodeDownloadLinkElement) {
+            console.error('No episode download link element found in the post');
+            return;
         }
-        sessionStorage.clear();
-    }
+        const episodeDownloadLink = episodeDownloadLinkElement.getAttribute('href');
+        if (!episodeDownloadLink) {
+            console.error('No episode download link href found');
+            return;
+        }
+        console.log('Episode Download Link:', episodeDownloadLink);
 
-    if (watchAdBtn) {
-        watchAdBtn.addEventListener('click', function() {
-            handleAdRedirect(window.location.href, 'video');
+        console.log('Initial localStorage check:', {
+            adWatched: localStorage.getItem('adWatched'),
+            returnUrl: localStorage.getItem('returnUrl'),
+            redirectAfterAd: localStorage.getItem('redirectAfterAd'),
+            adType: localStorage.getItem('adType')
         });
-    }
 
-    if (downloadBtn) {
-        downloadBtn.style.display = adWatched === 'true' && adType === 'download' ? 'inline-block' : 'none';
-        downloadBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Download button clicked, adWatched:', adWatched, 'adType:', adType);
-            if (adWatched === 'true' && adType === 'download') {
-                console.log('Ad already watched, redirecting to:', episodeDownloadLink);
-                window.location.href = episodeDownloadLink;
-            } else {
-                handleAdRedirect(episodeDownloadLink, 'download');
+        const adWatched = localStorage.getItem('adWatched');
+        const returnUrl = localStorage.getItem('returnUrl');
+        const adType = localStorage.getItem('adType');
+
+        if (adWatched === 'true' && returnUrl && window.location.href === returnUrl) {
+            console.log('Ad watched, processing redirect...');
+            if (adType === 'video' && adNotice) {
+                adNotice.style.display = 'none';
+            } else if (adType === 'download') {
+                const redirectUrl = localStorage.getItem('redirectAfterAd');
+                console.log('Redirecting to:', redirectUrl);
+                if (redirectUrl) {
+                    window.location.href = redirectUrl;
+                } else {
+                    console.error('No redirect URL found in localStorage');
+                }
             }
-        });
-    }
+            localStorage.removeItem('adWatched');
+            localStorage.removeItem('returnUrl');
+            localStorage.removeItem('redirectAfterAd');
+            localStorage.removeItem('adType');
+            localStorage.removeItem('adStartTime');
+        }
 
-    // ... (rest of the code for share popup, copy link, scroll to top, episode links remains the same)
+        if (watchAdBtn) {
+            watchAdBtn.addEventListener('click', function() {
+                handleAdRedirect(window.location.href, 'video');
+            });
+        }
+
+        if (downloadBtn) {
+            downloadBtn.style.display = adWatched === 'true' && adType === 'download' ? 'inline-block' : 'none';
+            downloadBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Download button clicked, adWatched:', adWatched, 'adType:', adType);
+                if (adWatched === 'true' && adType === 'download') {
+                    console.log('Ad already watched, redirecting to:', episodeDownloadLink);
+                    window.location.href = episodeDownloadLink;
+                } else {
+                    handleAdRedirect(episodeDownloadLink, 'download');
+                }
+            });
+        }
+    }, 1000); // Delay to ensure DOM is fully loaded
 });
