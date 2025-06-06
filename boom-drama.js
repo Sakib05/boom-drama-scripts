@@ -117,6 +117,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Get the episode download link from the post
     const episodeDownloadLinkElement = document.querySelector('.episode-download-link');
     const episodeDownloadLink = episodeDownloadLinkElement ? episodeDownloadLinkElement.getAttribute('href') : 'https://drive.google.com/sample';
+    // Debug to check if the link is being read correctly
+    console.log('Episode Download Link:', episodeDownloadLink);
 
     // Check if ad was watched for video
     const adWatched = sessionStorage.getItem('adWatched');
