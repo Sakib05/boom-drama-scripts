@@ -114,6 +114,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const downloadBtn = document.querySelector('.download-btn');
     const adNotice = document.querySelector('.ad-notice');
 
+    // Get the episode download link from the post
+    const episodeDownloadLinkElement = document.querySelector('.episode-download-link');
+    const episodeDownloadLink = episodeDownloadLinkElement ? episodeDownloadLinkElement.getAttribute('href') : 'https://drive.google.com/sample';
+
     // Check if ad was watched for video
     const adWatched = sessionStorage.getItem('adWatched');
     const returnUrl = sessionStorage.getItem('returnUrl');
@@ -148,10 +152,9 @@ document.addEventListener('DOMContentLoaded', function() {
         downloadBtn.addEventListener('click', function(e) {
             e.preventDefault();
             if (adWatched === 'true' && adType === 'download') {
-                const url = 'https://drive.google.com/sample';
-                window.location.href = url;
+                window.location.href = episodeDownloadLink; // Use the link from the post
             } else {
-                handleAdRedirect('https://drive.google.com/sample', 'download');
+                handleAdRedirect(episodeDownloadLink, 'download'); // Use the link from the post
             }
         });
     }
