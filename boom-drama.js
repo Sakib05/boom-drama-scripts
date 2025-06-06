@@ -49,11 +49,11 @@ function getRandomAdLink() {
     return selectedAd.link;
 }
 
-// Redirect Ad Logic for Video Ad and Download
+// Redirect Ad Logic for Video Ad, Download, and Episode Switch
 function handleAdRedirect(url, type) {
     sessionStorage.setItem('returnUrl', window.location.href);
     sessionStorage.setItem('redirectAfterAd', url);
-    sessionStorage.setItem('adType', type); // 'video' or 'download'
+    sessionStorage.setItem('adType', type); // 'video', 'download', or 'episode'
     sessionStorage.setItem('adStartTime', Date.now().toString());
     const adUrl = getRandomAdLink();
     window.location.href = adUrl;
@@ -72,8 +72,12 @@ window.addEventListener('load', function() {
                 if (elapsedTime >= 5) {
                     sessionStorage.setItem('adWatched', 'true');
                     const returnUrl = sessionStorage.getItem('returnUrl');
-                    if (returnUrl) {
+                    const adType = sessionStorage.getItem('adType');
+                    const redirectAfterAd = sessionStorage.getItem('redirectAfterAd');
+                    if (adType === 'video' && returnUrl) {
                         window.location.href = returnUrl;
+                    } else if ((adType === 'download' || adType === 'episode') && redirectAfterAd) {
+                        window.location.href = redirectAfterAd;
                     }
                 }
             }
@@ -122,11 +126,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (adWatched === 'true' && returnUrl && window.location.href === returnUrl) {
         if (adType === 'video' && adNotice) {
             adNotice.style.display = 'none';
-        } else if (adType === 'download') {
-            const redirectUrl = sessionStorage.getItem('redirectAfterAd');
-            if (redirectUrl) {
-                window.location.href = redirectUrl;
-            }
         }
         sessionStorage.removeItem('adWatched');
         sessionStorage.removeItem('returnUrl');
@@ -144,15 +143,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Download Button
     if (downloadBtn) {
-        downloadBtn.style.display = adWatched === 'true' && adType === 'download' ? 'inline-block' : 'none';
         downloadBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            if (adWatched === 'true' && adType === 'download') {
-                const url = 'https://drive.google.com/sample';
-                window.location.href = url;
-            } else {
-                handleAdRedirect('https://drive.google.com/sample', 'download');
-            }
+            const url = 'https://gofile.io/sample'; // Replace with your Gofile download link
+            handleAdRedirect(url, 'download');
         });
     }
 
@@ -175,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 const url = this.getAttribute('href');
-                handleAdRedirect(url, 'video');
+                handleAdRedirect(url, 'episode');
             });
         });
     }
