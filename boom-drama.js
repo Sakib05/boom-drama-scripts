@@ -112,6 +112,14 @@ function copyLink() {
     }
 }
 
+// Extract Gofile Link from Post Content
+function extractGofileLink() {
+    const postContent = document.querySelector('.post-body')?.innerHTML || '';
+    const gofileRegex = /https:\/\/gofile\.io\/d\/[a-zA-Z0-9]+/g;
+    const match = postContent.match(gofileRegex);
+    return match ? match[0] : null;
+}
+
 // Initialize Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
     const watchAdBtn = document.querySelector('.watch-ad-btn');
@@ -141,13 +149,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Download Button
+    // Download Button with Gofile Link
     if (downloadBtn) {
-        downloadBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            const url = 'https://gofile.io/sample'; // Replace with your Gofile download link
-            handleAdRedirect(url, 'download');
-        });
+        const gofileLink = extractGofileLink();
+        if (gofileLink) {
+            downloadBtn.setAttribute('href', '#'); // Default to prevent direct click
+            downloadBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (adWatched === 'true') {
+                    window.location.href = gofileLink;
+                } else {
+                    handleAdRedirect(gofileLink, 'download');
+                }
+            });
+        } else {
+            downloadBtn.style.display = 'none'; // Hide if no Gofile link found
+        }
     }
 
     // Copy Link Button
