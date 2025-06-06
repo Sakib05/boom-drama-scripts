@@ -1,19 +1,34 @@
 // Debug to confirm script is loading
 console.log('Script loaded successfully at ' + new Date().toLocaleString());
 
-// Multiple Ad Links
+// Scroll to Top
+window.onscroll = function() {
+    let scrollBtn = document.querySelector('.scroll-to-top');
+    if (scrollBtn) {
+        if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+            scrollBtn.classList.add('show');
+        } else {
+            scrollBtn.classList.remove('show');
+        }
+    }
+};
+
+function scrollToTop() {
+    window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+// Multiple Ad Links for Video Ad
 const adLinks = [
-    'https://google.com',
-    'https://alibaba.com',
-    'https://trickbd.com',
+    'https://example.com/ad1',
+    'https://example.com/ad2',
+    'https://example.com/ad3',
     'https://example.com/ad4'
 ];
 
-// Function to get a random ad link
+// Function to get a random ad link that hasn't been used in the last 24 hours
 function getRandomAdLink() {
-    console.log('Getting random ad link...');
     const now = Date.now();
-    const oneDayInMs = 24 * 60 * 60 * 1000;
+    const oneDayInMs = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
     let availableAds = [];
     for (let i = 0; i < adLinks.length; i++) {
         const adKey = `adUsed_${i}`;
@@ -31,64 +46,40 @@ function getRandomAdLink() {
     const randomIndex = Math.floor(Math.random() * availableAds.length);
     const selectedAd = availableAds[randomIndex];
     localStorage.setItem(`adUsed_${selectedAd.index}`, now.toString());
-    console.log('Selected ad:', selectedAd.link);
     return selectedAd.link;
 }
 
-// Redirect Ad Logic
+// Redirect Ad Logic for Video Ad and Download
 function handleAdRedirect(url, type) {
-    console.log('Handling ad redirect for:', url, 'Type:', type);
-    localStorage.setItem('returnUrl', window.location.href);
-    localStorage.setItem('redirectAfterAd', url);
-    localStorage.setItem('adType', type);
-    localStorage.setItem('adStartTime', Date.now().toString());
-    console.log('Stored in localStorage:', {
-        returnUrl: localStorage.getItem('returnUrl'),
-        redirectAfterAd: localStorage.getItem('redirectAfterAd'),
-        adType: localStorage.getItem('adType'),
-        adStartTime: localStorage.getItem('adStartTime')
-    });
+    sessionStorage.setItem('returnUrl', window.location.href);
+    sessionStorage.setItem('redirectAfterAd', url);
+    sessionStorage.setItem('adType', type); // 'video' or 'download'
+    sessionStorage.setItem('adStartTime', Date.now().toString());
     const adUrl = getRandomAdLink();
-    console.log('Redirecting to ad:', adUrl);
     window.location.href = adUrl;
 }
 
-// Ad Page Countdown Logic
+// Ad Page Countdown Logic (Simulated in the script for the ad page)
 window.addEventListener('load', function() {
-    const adStartTime = localStorage.getItem('adStartTime');
-    if (adStartTime && adLinks.some(link => {
-        try {
-            return window.location.href.includes(new URL(link).hostname);
-        } catch (e) {
-            console.error('Invalid ad link:', link, e);
-            return false;
-        }
-    })) {
-        console.log('On ad page, starting countdown...');
+    const adStartTime = sessionStorage.getItem('adStartTime');
+    if (adStartTime && adLinks.some(link => window.location.href.includes(new URL(link).hostname))) {
         let timeLeft = 5;
         const countdown = setInterval(() => {
-            console.log('Time left:', timeLeft);
             timeLeft--;
             if (timeLeft <= 0) {
                 clearInterval(countdown);
                 const elapsedTime = (Date.now() - parseInt(adStartTime)) / 1000;
-                console.log('Elapsed time:', elapsedTime, 'seconds');
                 if (elapsedTime >= 5) {
-                    localStorage.setItem('adWatched', 'true');
-                    console.log('Ad watched, redirecting back...');
-                    const returnUrl = localStorage.getItem('returnUrl');
+                    sessionStorage.setItem('adWatched', 'true');
+                    const returnUrl = sessionStorage.getItem('returnUrl');
                     if (returnUrl) {
-                        console.log('Returning to:', returnUrl);
                         window.location.href = returnUrl;
-                    } else {
-                        console.log('No return URL found');
                     }
-                } else {
-                    console.log('Elapsed time less than 5 seconds, ad not counted as watched');
                 }
             }
         }, 1000);
 
+        // Prevent back navigation from skipping the ad
         window.history.pushState(null, null, window.location.href);
         window.addEventListener('popstate', function() {
             window.history.pushState(null, null, window.location.href);
@@ -96,75 +87,96 @@ window.addEventListener('load', function() {
     }
 });
 
+// Share Popup Toggle
+function toggleSharePopup() {
+    console.log('Toggling share popup'); // Debug
+    let popup = document.querySelector('.share-popup');
+    if (popup) {
+        popup.classList.toggle('active');
+    } else {
+        console.log('Share popup not found');
+    }
+}
+
+// Copy Link
+function copyLink() {
+    let linkInput = document.querySelector('.share-link input');
+    if (linkInput) {
+        linkInput.select();
+        document.execCommand('copy');
+        alert('Link copied to clipboard!');
+    }
+}
+
 // Initialize Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM fully loaded, initializing event listeners...');
-    setTimeout(() => {
-        const watchAdBtn = document.querySelector('.watch-ad-btn');
-        const downloadBtn = document.querySelector('.download-btn');
-        const adNotice = document.querySelector('.ad-notice');
+    const watchAdBtn = document.querySelector('.watch-ad-btn');
+    const downloadBtn = document.querySelector('.download-btn');
+    const adNotice = document.querySelector('.ad-notice');
 
-        const episodeDownloadLinkElement = document.querySelector('.episode-download-link');
-        if (!episodeDownloadLinkElement) {
-            console.error('No episode download link element found in the post');
-            return;
-        }
-        const episodeDownloadLink = episodeDownloadLinkElement.getAttribute('href');
-        if (!episodeDownloadLink) {
-            console.error('No episode download link href found');
-            return;
-        }
-        console.log('Episode Download Link:', episodeDownloadLink);
+    // Check if ad was watched for video
+    const adWatched = sessionStorage.getItem('adWatched');
+    const returnUrl = sessionStorage.getItem('returnUrl');
+    const adType = sessionStorage.getItem('adType');
 
-        console.log('Initial localStorage check:', {
-            adWatched: localStorage.getItem('adWatched'),
-            returnUrl: localStorage.getItem('returnUrl'),
-            redirectAfterAd: localStorage.getItem('redirectAfterAd'),
-            adType: localStorage.getItem('adType')
-        });
-
-        const adWatched = localStorage.getItem('adWatched');
-        const returnUrl = localStorage.getItem('returnUrl');
-        const adType = localStorage.getItem('adType');
-
-        if (adWatched === 'true' && returnUrl && window.location.href === returnUrl) {
-            console.log('Ad watched, processing redirect...');
-            if (adType === 'video' && adNotice) {
-                adNotice.style.display = 'none';
-            } else if (adType === 'download') {
-                const redirectUrl = localStorage.getItem('redirectAfterAd');
-                console.log('Redirecting to:', redirectUrl);
-                if (redirectUrl) {
-                    window.location.href = redirectUrl;
-                } else {
-                    console.error('No redirect URL found in localStorage');
-                }
+    if (adWatched === 'true' && returnUrl && window.location.href === returnUrl) {
+        if (adType === 'video' && adNotice) {
+            adNotice.style.display = 'none';
+        } else if (adType === 'download') {
+            const redirectUrl = sessionStorage.getItem('redirectAfterAd');
+            if (redirectUrl) {
+                window.location.href = redirectUrl;
             }
-            localStorage.removeItem('adWatched');
-            localStorage.removeItem('returnUrl');
-            localStorage.removeItem('redirectAfterAd');
-            localStorage.removeItem('adType');
-            localStorage.removeItem('adStartTime');
         }
+        sessionStorage.removeItem('adWatched');
+        sessionStorage.removeItem('returnUrl');
+        sessionStorage.removeItem('redirectAfterAd');
+        sessionStorage.removeItem('adType');
+        sessionStorage.removeItem('adStartTime');
+    }
 
-        if (watchAdBtn) {
-            watchAdBtn.addEventListener('click', function() {
-                handleAdRedirect(window.location.href, 'video');
-            });
-        }
+    // Watch Ad Button for Video
+    if (watchAdBtn) {
+        watchAdBtn.addEventListener('click', function() {
+            handleAdRedirect(window.location.href, 'video');
+        });
+    }
 
-        if (downloadBtn) {
-            downloadBtn.style.display = adWatched === 'true' && adType === 'download' ? 'inline-block' : 'none';
-            downloadBtn.addEventListener('click', function(e) {
+    // Download Button
+    if (downloadBtn) {
+        downloadBtn.style.display = adWatched === 'true' && adType === 'download' ? 'inline-block' : 'none';
+        downloadBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (adWatched === 'true' && adType === 'download') {
+                const url = 'https://drive.google.com/sample';
+                window.location.href = url;
+            } else {
+                handleAdRedirect('https://drive.google.com/sample', 'download');
+            }
+        });
+    }
+
+    // Copy Link Button
+    const copyLinkBtn = document.querySelector('.share-link button');
+    if (copyLinkBtn) {
+        copyLinkBtn.addEventListener('click', copyLink);
+    }
+
+    // Scroll to Top Button
+    const scrollToTopBtn = document.querySelector('.scroll-to-top');
+    if (scrollToTopBtn) {
+        scrollToTopBtn.addEventListener('click', scrollToTop);
+    }
+
+    // Episode Links
+    const episodeLinks = document.querySelectorAll('.episode-switcher a');
+    if (episodeLinks) {
+        episodeLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
                 e.preventDefault();
-                console.log('Download button clicked, adWatched:', adWatched, 'adType:', adType);
-                if (adWatched === 'true' && adType === 'download') {
-                    console.log('Ad already watched, redirecting to:', episodeDownloadLink);
-                    window.location.href = episodeDownloadLink;
-                } else {
-                    handleAdRedirect(episodeDownloadLink, 'download');
-                }
+                const url = this.getAttribute('href');
+                handleAdRedirect(url, 'video');
             });
-        }
-    }, 1000); // Delay to ensure DOM is fully loaded
+        });
+    }
 });
