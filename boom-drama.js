@@ -114,24 +114,33 @@ function copyLink() {
 
 // Extract Gofile Link from Post Content
 function extractGofileLink() {
-    const postContent = document.querySelector('.post-body')?.innerHTML || '';
+    const postContent = document.querySelector('.episode-player')?.innerHTML || '';
     const gofileRegex = /https:\/\/gofile\.io\/d\/[a-zA-Z0-9]+/g;
     const match = postContent.match(gofileRegex);
     return match ? match[0] : null;
 }
 
-// Extract Streamtape Link from Post Content and Generate Thumbnail
-function extractStreamtapeLinkAndThumbnail() {
-    const postContent = document.querySelector('.post-body')?.innerHTML || '';
-    const streamtapeRegex = /https:\/\/streamtape\.com\/e\/[a-zA-Z0-9]+/g;
-    const match = postContent.match(streamtapeRegex);
-    if (match) {
-        const streamtapeLink = match[0];
-        const videoId = streamtapeLink.split('/e/')[1];
-        const thumbnailUrl = `https://streamtape.com/thumbs/${videoId}.jpg`;
-        return { streamtapeLink, thumbnailUrl };
-    }
-    return { streamtapeLink: null, thumbnailUrl: null };
+// Set Thumbnail on Homepage
+function setThumbnails() {
+    const dramaCards = document.querySelectorAll('.drama-card');
+    dramaCards.forEach(card => {
+        const postUrl = card.querySelector('a').getAttribute('href');
+        fetch(postUrl)
+            .then(response => response.text())
+            .then(data => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data, 'text/html');
+                const thumbnailUrlDiv = doc.querySelector('.thumbnail-url');
+                if (thumbnailUrlDiv) {
+                    const thumbnailUrl = thumbnailUrlDiv.textContent.trim();
+                    const img = card.querySelector('img');
+                    if (img && thumbnailUrl) {
+                        img.src = thumbnailUrl;
+                    }
+                }
+            })
+            .catch(err => console.log('Error fetching post for thumbnail:', err));
+    });
 }
 
 // Initialize Event Listeners
@@ -182,54 +191,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Copy Link Button
-    const copyLinkBtn = document.querySelector('.share-link button');
-    if (copyLinkBtn) {
-        copyLinkBtn.addEventListener('click', copyLink);
-    }
-
-    // Scroll to Top Button
-    const scrollToTopBtn = document.querySelector('.scroll-to-top');
-    if (scrollToTopBtn) {
-        scrollToTopBtn.addEventListener('click', scrollToTop);
-    }
-
-    // Episode Links
-    const episodeLinks = document.querySelectorAll('.episode-switcher a');
-    if (episodeLinks) {
-        episodeLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const url = this.getAttribute('href');
-                handleAdRedirect(url, 'episode');
-            });
-        });
-    }
-
-    // Set Streamtape Thumbnail on Homepage
-    if (document.querySelector('.drama-grid')) {
-        const dramaCards = document.querySelectorAll('.drama-card');
-        dramaCards.forEach(card => {
-            const postUrl = card.querySelector('a').getAttribute('href');
-            // Fetch post content dynamically (simplified approach)
-            fetch(postUrl)
-                .then(response => response.text())
-                .then(data => {
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(data, 'text/html');
-                    const postContent = doc.querySelector('.post-body')?.innerHTML || '';
-                    const streamtapeRegex = /https:\/\/streamtape\.com\/e\/[a-zA-Z0-9]+/g;
-                    const match = postContent.match(streamtapeRegex);
-                    if (match) {
-                        const streamtapeLink = match[0];
-                        const videoId = streamtapeLink.split('/e/')[1];
-                        const thumbnailUrl = `https://streamtape.com/thumbs/${videoId}.jpg`;
-                        const img = card.querySelector('img');
-                        if (img) {
-                            img.src = thumbnailUrl;
-                        }
-                    }
-                })
-                .catch(err => console.log('Error fetching post for thumbnail:', err));
-        });
-    }
-});
+    const copy
